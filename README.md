@@ -25,7 +25,9 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 
 ## Funktionen
 
-- **Tagesrunde** mit Streak und Level-System
+- **Tages-Challenge:** Jeden Tag bekommen alle dieselben 13 Fragen (Schwierigkeit Mittel), mit Rangliste „Heute“ unter Freunden und teilbarem Ergebnis
+- **Freie Runden** danach auf dem eigenen Schwierigkeitsgrad
+- **Streak und Level-System**
 - **Bonuslevel** mit doppelten XP nach 3 Tagen am Stück
 - **„Das hast du heute gelernt“** nach jeder Runde
 - **Drei Schwierigkeitsgrade:** Leicht, Mittel, Schwer
