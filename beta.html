@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Denkpause</title>
+<meta name="description" content="Drei Minuten Brain-Games statt Scrollen.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Denkpause">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F7F3EA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Figtree:wght@500;600;700&family=JetBrains+Mono:wght@700;800&display=swap">
+<style>
+/* Layout: eggshell ground, white tiles, ink hero card, one bright colour per game; single column on phones, two columns from 900px. Light-only by design. */
+:root{
+  color-scheme:light;
+  --bg:#F7F3EA; --surface:#FFFFFF; --sunk:#F1ECE1; --ink:#141414; --muted:#6B675F; --line:#E7E1D4;
+  --geo:#2F6BFF; --wissen:#8A4DFF; --fermi:#FF7A1A; --rechnen:#11A866; --sudoku:#FF3D7F;
+  --reward:#FFC21A; --reward-soft:#FFF3CC; --good:#11A866; --bad:#E5483B;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Figtree",-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --r-lg:24px; --r-md:16px;
+  padding-top:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:500;font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:900;margin:0;text-wrap:balance;letter-spacing:-.025em;line-height:1.02}
+p{margin:0}
+.app{max-width:480px;margin:0 auto;padding-block:20px 40px;display:flex;flex-direction:column;gap:16px}
+.app.wide{max-width:1040px}
+.app.tabs-on{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+.eyebrow{font-family:var(--mono);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:-.035em}
+.brand svg{flex:none}
+.chips{display:flex;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:13px;font-weight:800;background:var(--surface);border-radius:999px;padding:7px 12px;white-space:nowrap}
+.iconbtn{all:unset;box-sizing:border-box;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface);font-family:var(--display);font-weight:900;font-size:15px}
+.card{background:var(--surface);border-radius:var(--r-lg);padding:20px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-family:var(--display);font-weight:800;font-size:13px;padding:6px 11px;border-radius:999px;color:#fff;white-space:nowrap}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;display:block;text-align:center;font-family:var(--display);font-weight:900;font-size:18px;padding:17px 18px;border-radius:var(--r-md);background:var(--ink);color:#fff;width:100%;letter-spacing:-.01em;transition:transform .12s ease}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--line)}
+.btn.gold{background:var(--reward);color:var(--ink)}
+.btn.light{background:#fff;color:var(--ink)}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+.btn.danger,.mini.danger{background:var(--bad);color:#fff;box-shadow:none}
+.mini{all:unset;box-sizing:border-box;cursor:pointer;padding:10px 14px;border-radius:12px;background:var(--ink);color:#fff;font-family:var(--display);font-weight:800;font-size:14px;white-space:nowrap;text-align:center}
+.mini.soft{background:var(--sunk);color:var(--ink)}
+:is(.btn,.mini,.iconbtn,.opt,.cell,.pad button,.tabbar button,.seg button,.choice,.link):focus-visible{outline:3px solid var(--geo);outline-offset:2px}
+input.field{font:inherit;font-weight:700;font-size:18px;width:100%;padding:15px 16px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+input.field:focus{outline:none;border-color:var(--ink)}
+.bar{height:10px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--reward);border-radius:99px;transition:width .6s ease}
+.dots3{display:flex;gap:6px}
+.dots3 span{flex:1;height:8px;border-radius:9px;background:var(--sunk)}
+.dots3 span.on{background:var(--reward)}
+
+/* ---------- onboarding & intro ---------- */
+.center{min-height:calc(100vh - 40px);min-height:calc(100dvh - 40px);justify-content:center}
+.welcome h1{font-size:44px}
+.welcome .lead{font-size:18px;color:var(--muted)}
+.choice{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;background:var(--surface);border-radius:var(--r-md);padding:16px 18px;border:2px solid transparent}
+.choice b{font-family:var(--display);font-weight:900;font-size:19px}
+.choice span{color:var(--muted);font-size:15px}
+.choice.on{border-color:var(--ink)}
+.steps{display:flex;gap:6px}
+.steps span{width:28px;height:5px;border-radius:9px;background:var(--line)}
+.steps span.on{background:var(--ink)}
+.intro h1{font-size:46px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vs .card{padding:18px 16px;display:flex;flex-direction:column;gap:8px}
+.vs .big{font-family:var(--display);font-weight:900;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.vs .scroll{background:transparent;box-shadow:inset 0 0 0 2px var(--line);color:var(--muted)}
+.vs ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.quote{font-family:var(--display);font-weight:800;font-size:22px;line-height:1.15;letter-spacing:-.015em;text-wrap:balance}
+.quote small{display:block;margin-top:8px;font-family:var(--body);font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
+
+/* ---------- home ---------- */
+.page-title{font-size:40px}
+.hello h1{font-size:42px}
+.hello p{margin-top:10px;color:var(--muted);font-size:17px}
+.name-btn{all:unset;cursor:pointer;border-bottom:4px solid var(--reward)}
+.hero{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;gap:18px}
+.hero .eyebrow{color:#B9B4A9}
+.hero h2{font-size:28px}
+.hero .games{display:flex;flex-wrap:wrap;gap:6px}
+.hero.done{background:var(--surface);color:var(--ink)}
+.hero.done .eyebrow{color:var(--muted)}
+.bonus{background:var(--reward);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:12px}
+.bonus h2{font-size:24px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{padding:16px 14px}
+.stat .n{font-family:var(--display);font-size:30px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.stat .n small{font-size:15px;color:var(--muted);font-weight:800}
+.stat .l{color:var(--muted);font-size:13px;margin-top:6px;font-weight:600}
+.swap{font-size:15px;color:var(--muted);font-weight:600}
+.cols{display:grid;gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* ---------- friends ---------- */
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rank li{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--line)}
+.rank li:first-child{border-top:none}
+.rank li.me{background:var(--reward-soft);border-radius:14px;padding:12px;border-top-color:transparent}
+.rank li.me+li{border-top-color:transparent}
+.avatar{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--display);font-weight:900;font-size:17px}
+.rank .pos{font-family:var(--display);font-weight:900;font-size:16px;width:18px;color:var(--muted);text-align:center}
+.rank .who{flex:1;min-width:0;font-weight:700}
+.rank .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .who small{display:block;font-weight:600;color:var(--muted);font-size:13px}
+.rank .xp{font-family:var(--mono);font-weight:800;font-size:14px;white-space:nowrap}
+.codebox{display:flex;gap:8px;align-items:center}
+.codebox input{flex:1;min-width:0;font:inherit;font-family:var(--mono);font-size:13px;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.empty{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px}
+.msg{font-weight:700;font-size:14px}
+.msg.ok{color:var(--good)}.msg.err{color:var(--bad)}
+
+/* ---------- settings ---------- */
+.group{display:flex;flex-direction:column;gap:8px}
+.group>.eyebrow{padding-left:4px}
+.list{background:var(--surface);border-radius:var(--r-lg);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:16px 18px;border-top:1px solid var(--line);min-height:60px}
+.item:first-child{border-top:none}
+.item .lbl{flex:1;min-width:0;font-weight:700}
+.item .lbl small{display:block;font-weight:500;color:var(--muted);font-size:14px;margin-top:2px}
+.item.block{flex-direction:column;align-items:stretch}
+.link{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:16px 18px;border-top:1px solid var(--line);font-weight:700;min-height:60px}
+.link:first-child{border-top:none}
+.link span{flex:1}
+.link svg{color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:var(--sunk);padding:4px;border-radius:14px}
+.seg button{all:unset;cursor:pointer;text-align:center;padding:11px 0;border-radius:11px;font-family:var(--display);font-weight:800;font-size:15px;color:var(--muted)}
+.seg button.on{background:var(--ink);color:#fff}
+.avatar.lg{width:52px;height:52px;font-size:22px}
+.namefield{display:flex;gap:8px}
+.namefield input{flex:1;min-width:0;font:inherit;font-weight:700;font-size:16px;padding:11px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.inline-link{all:unset;cursor:pointer;color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.rank .iconbtn{width:30px;height:30px;font-size:17px;background:var(--sunk);color:var(--muted);flex:none}
+.rank .iconbtn.arm{background:var(--bad);color:#fff}
+.welcome .list .item{border-top:none}
+.version{text-align:center;color:var(--muted);font-size:13px;font-weight:600}
+
+/* ---------- tab bar ---------- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-content:space-around;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);border-top:1px solid var(--line);
+  padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.tabbar button{all:unset;cursor:pointer;flex:1;max-width:150px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;color:var(--muted);font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:.01em}
+.tabbar .pill{display:flex;align-items:center;justify-content:center;width:56px;height:32px;border-radius:999px;transition:background .2s ease}
+.tabbar button.on{color:var(--ink)}
+.tabbar button.on .pill{background:var(--ink);color:#fff}
+
+/* ---------- game ---------- */
+.gamebar{display:flex;align-items:center;gap:12px}
+.progress{flex:1;display:flex;gap:5px}
+.progress span{flex:1;height:6px;border-radius:9px;background:var(--line)}
+.x{all:unset;cursor:pointer;font-family:var(--display);font-weight:800;font-size:13px;padding:8px 13px;border-radius:999px;background:var(--surface);color:var(--muted);white-space:nowrap}
+.x.arm{background:var(--bad);color:#fff}
+.gamehead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q{font-family:var(--display);font-size:28px;font-weight:900;line-height:1.1;letter-spacing:-.02em}
+.sub{display:block;margin-top:10px;font-family:var(--body);font-size:16px;font-weight:600;color:var(--muted);letter-spacing:0}
+.shape{position:relative;display:flex;align-items:center;justify-content:center;width:100%;max-width:min(320px,36vh);aspect-ratio:1/1;margin:0 auto 18px;border-radius:var(--r-lg);background-color:var(--surface);background-image:radial-gradient(var(--line) 1.3px,transparent 1.4px);background-size:18px 18px;background-position:9px 9px}
+.shape svg{width:84%;height:84%;overflow:visible}
+.shape path{fill:var(--geo);fill-rule:evenodd;stroke:#1D4ED8;stroke-width:.5;stroke-linejoin:round;transition:fill .35s ease,stroke .35s ease}
+.shape.ok path{fill:var(--good);stroke:#0B7F4D}
+.shape.no path{fill:var(--ink);stroke:var(--ink)}
+.shape-name{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(6px);opacity:0;transition:opacity .3s ease,transform .3s ease;background:var(--ink);color:#fff;font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:0;padding:6px 12px;border-radius:999px;white-space:nowrap}
+.shape.ok .shape-name,.shape.no .shape-name{opacity:1;transform:translateX(-50%)}
+.flag{display:block;font-size:92px;line-height:1;margin-bottom:14px}
+.opts{display:grid;gap:10px}
+.opt{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:2px solid transparent;border-radius:var(--r-md);padding:17px 18px;font-weight:700;font-size:17px;transition:transform .1s ease}
+.opt:active{transform:scale(.99)}
+.opt.right{border-color:var(--good);background:#E7F7EF}
+.opt.wrong{border-color:var(--bad);background:#FDEAE8}
+.fact{background:var(--surface);border-radius:var(--r-md);padding:16px;font-size:15px;border-left:5px solid var(--c)}
+.fact b{font-family:var(--display);font-weight:900}
+.math{font-family:var(--mono);font-size:48px;font-weight:800;text-align:center;padding:12px 0;font-variant-numeric:tabular-nums}
+.timer{height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.timer i{display:block;height:100%;background:var(--rechnen);width:100%}
+.mopts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mopts .opt{text-align:center;font-family:var(--mono);font-size:24px;font-weight:800}
+.fermi-in{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:var(--r-md);padding:6px 16px}
+.fermi-in input{all:unset;flex:1;min-width:0;font-family:var(--mono);font-weight:800;font-size:30px;padding:10px 0}
+.fermi-in span{font-weight:700;color:var(--muted)}
+.sudoku{display:grid;grid-template-columns:repeat(4,1fr);border:3px solid var(--ink);border-radius:14px;overflow:hidden;aspect-ratio:1;width:100%;max-width:400px;margin:0 auto}
+.cell{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:30px;font-weight:800;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);cursor:pointer}
+.cell:nth-child(4n){border-right:none}.cell:nth-child(n+13){border-bottom:none}
+.cell:nth-child(4n+2){border-right:3px solid var(--ink)}
+.cell:nth-child(n+5):nth-child(-n+8){border-bottom:3px solid var(--ink)}
+.cell.given{cursor:default;background:var(--sunk)}
+.cell.user{color:var(--sudoku)}
+.cell.sel{background:#FFE4EE}
+.cell.err{color:var(--bad);text-decoration:line-through}
+.pad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:100%;max-width:400px;margin:0 auto}
+.pad button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:15px 0;border-radius:14px;background:var(--surface);font-family:var(--mono);font-size:22px;font-weight:800}
+.xp-big{font-family:var(--display);font-size:64px;font-weight:900;line-height:1;letter-spacing:-.03em}
+.learned{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
+.learned li{display:flex;gap:10px;font-size:15px;font-weight:600}
+.learned li i{flex:none;width:9px;height:9px;margin-top:6px;border-radius:50%}
+.pop{animation:pop .35s ease}
+@keyframes pop{0%{transform:translateY(6px);opacity:.4}100%{transform:none;opacity:1}}
+
+/* ---------- larger screens ---------- */
+@media (min-width:900px){
+  .cols.two{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+  .hello h1{font-size:56px}
+  .page-title{font-size:52px}
+  .app.wide{padding-top:36px}
+  .tabbar{left:50%;right:auto;bottom:20px;transform:translateX(-50%);width:420px;border-radius:999px;border:1px solid var(--line);box-shadow:0 10px 30px rgba(20,20,20,.10);padding:8px 10px}
+  .app.tabs-on{padding-bottom:120px}
+  .center{min-height:calc(100vh - 80px)}
+}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}.bar i,.btn,.opt,.tabbar .pill{transition:none}}
+</style>
+</head>
+<body>
+<main class="app" id="app"></main>
+<nav class="tabbar" id="tabs" hidden aria-label="Bereiche">
+  <button data-tab="spiele"><span class="pill"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></span>Spiele</button>
+  <button data-tab="freunde"><span class="pill"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.8"/><path d="M16.5 14.2c3 .2 5 2.3 5 5.3"/></svg></span>Freunde</button>
+  <button data-tab="einstellungen"><span class="pill"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Einstellungen</button>
+</nav>
+<script src="questions.js"></script>
+<script src="shapes.js"></script>
+<script>
+/* ================= Konfiguration ================= */
+const VERSION="0.7 Beta";
+const APP_URL="https://moritzkloer.github.io/denkpause/";
+const REPO_URL="https://github.com/Moritzkloer/denkpause";
+const {GEO,WISSEN,FERMI,QUOTES,CLUES}=window.DP;
+const SHAPES=window.DP.SHAPES||{};
+const GAMES={
+  geo:{name:"Geo-Quiz",c:"var(--geo)"},
+  wissen:{name:"Wissen",c:"var(--wissen)"},
+  fermi:{name:"Schätzen",c:"var(--fermi)"},
+  rechnen:{name:"Kopfrechnen",c:"var(--rechnen)"},
+  sudoku:{name:"Sudoku",c:"var(--sudoku)"}
+};
+const ORDER=["geo","wissen","fermi","rechnen","sudoku"];
+const AVATAR_COLORS=["#2F6BFF","#8A4DFF","#FF7A1A","#11A866","#FF3D7F","#141414"];
+const EASY=new Set(["Deutschland","Frankreich","Italien","Spanien","Portugal","Niederlande","Belgien","Schweiz","Österreich","Polen","Tschechien","Ungarn","Kroatien","Griechenland","Schweden","Norwegen","Dänemark","Finnland","Island","Irland","Vereinigtes Königreich","Russland","Ukraine","Türkei","China","Japan","Südkorea","Indien","Thailand","Vietnam","Iran","Saudi-Arabien","Vereinigte Arabische Emirate","Singapur","Ägypten","Marokko","Südafrika","Kenia","Nigeria","USA","Kanada","Mexiko","Kuba","Brasilien","Argentinien","Chile","Peru","Kolumbien","Australien","Neuseeland"]);
+const LEVELS={
+  leicht:{label:"Leicht",desc:"Bekannte Länder, 3 statt 4 Antworten, kleinere Zahlen und mehr Zeit.",opts:3,t:10000,holes:7,fermi:[1.25,2,4]},
+  mittel:{label:"Mittel",desc:"Alle Länder und Fragen, 4 Antworten, 8 Sekunden pro Rechenaufgabe.",opts:4,t:8000,holes:9,fermi:[1.1,1.5,3]},
+  schwer:{label:"Schwer",desc:"Vor allem unbekanntere Länder, größere Zahlen, 6 Sekunden, strengere Schätzungen.",opts:4,t:6000,holes:11,fermi:[1.05,1.25,2]}
+};
+
+/* ================= Zustand ================= */
+const KEY="statt.v2";
+const ds=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=()=>ds(new Date());
+const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return ds(d)};
+const fresh=(name,level)=>({name,level:level||"mittel",xp:0,streak:0,last:null,learned:[],rounds:0,facts:0,bonusDay:null,bonusDone:null,friends:[],seen:{}});
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&!v.example&&v.name)return v}catch(e){}return null}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){saveLocal();if(typeof syncSoon==="function")syncSoon()}
+let S=load();
+const LV=()=>LEVELS[(S&&S.level)]||LEVELS.mittel;
+
+/* ================= Helfer ================= */
+function rng(seed){let h=1779033703^seed.length;for(let i=0;i<seed.length;i++){h=Math.imul(h^seed.charCodeAt(i),3432918353);h=h<<13|h>>>19}return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return((h^=h>>>16)>>>0)/4294967296}}
+const shuffle=(a,r)=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const levelOf=xp=>{let lvl=1,need=100,rest=xp;while(rest>=need){rest-=need;lvl++;need=Math.round(need*1.25)}return{lvl,rest,need}};
+const greet=()=>{const h=new Date().getHours();return h<11?"Guten Morgen":h<17?"Hallo":h<22?"Guten Abend":"Noch wach"};
+const fmt=n=>Number(n).toLocaleString("de-DE");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const doneToday=()=>S.last===today();
+const liveStreak=()=>(S.last===today()||S.last===yesterday())?S.streak:0;
+const bonusOpen=()=>S.bonusDay===today()&&S.bonusDone!==today();
+const $=s=>document.querySelector(s);
+const app=$("#app");
+let R=null,tmr=null;
+const tag=k=>`<span class="tag" style="background:${GAMES[k].c}">${GAMES[k].name}</span>`;
+const ICON=n=>`<svg aria-hidden="true" width="${n}" height="${n}" viewBox="0 0 100 100"><rect width="100" height="100" rx="23" fill="#141414"/><rect x="32" y="38" width="12" height="40" rx="6" fill="#F7F3EA"/><rect x="56" y="38" width="12" height="40" rx="6" fill="#F7F3EA"/><circle cx="50" cy="22" r="7.5" fill="#FFC21A"/></svg>`;
+const BRAND=`<div class="brand">${ICON(32)}<span>denkpause<span style="color:var(--reward)">.</span></span></div>`;
+const CHEV=`<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
+const avatar=(name,cls="")=>{let h=0;for(const ch of String(name))h=(h*31+ch.charCodeAt(0))>>>0;return `<span class="avatar ${cls}" style="background:${AVATAR_COLORS[h%AVATAR_COLORS.length]}" aria-hidden="true">${esc(String(name).trim().charAt(0).toUpperCase()||"?")}</span>`};
+const enc=o=>{try{return btoa(unescape(encodeURIComponent(JSON.stringify(o))))}catch(e){return""}};
+const dec=t=>{try{return JSON.parse(decodeURIComponent(escape(atob(t))))}catch(e){return null}};
+function view(cls,tab){CUR=tab||null;app.className="app "+cls+(tab?" tabs-on":"");setTabs(tab);window.scrollTo(0,0)}
+function setTabs(active){
+  const t=$("#tabs");t.hidden=!active;
+  t.querySelectorAll("button").forEach(b=>{const on=b.dataset.tab===active;b.classList.toggle("on",on);on?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current")});
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)({spiele:home,freunde:friendsView,einstellungen:settingsView})[b.dataset.tab]()});
+function twoTap(btn,label,fn){btn.onclick=()=>{if(btn.dataset.arm){fn();return}btn.dataset.arm="1";const old=btn.textContent;btn.textContent=label;btn.classList.add("danger");setTimeout(()=>{if(btn.isConnected){delete btn.dataset.arm;btn.textContent=old;btn.classList.remove("danger")}},3000)}}
+function copyText(btn,text,field){
+  const done=()=>{const o=btn.textContent;btn.textContent="Kopiert";setTimeout(()=>{if(btn.isConnected)btn.textContent=o},1500)};
+  const fallback=()=>{if(field){field.focus();field.select()}btn.textContent="Markiert";};
+  try{navigator.clipboard.writeText(text).then(done,fallback)}catch(e){fallback()}
+}
+
+/* ================= Erster Start ================= */
+function onboarding(step,draft){
+  draft=draft||{name:"",level:"mittel"};
+  view("center",null);
+  if(step!==2){
+    app.innerHTML=`<section class="stack welcome pop" style="gap:22px">
+      <div class="steps" aria-hidden="true"><span class="on"></span><span></span></div>
+      ${ICON(72)}
+      <h1>Willkommen bei denkpause<span style="color:var(--reward)">.</span></h1>
+      <p class="lead">Drei Minuten Brain-Games statt Scrollen. Jeden Tag eine kurze Runde, nach der du mehr weißt als vorher.</p>
+      <label class="stack" style="gap:8px"><span class="eyebrow">Wie heißt du?</span>
+        <input class="field" id="ob-name" maxlength="20" autocomplete="given-name" placeholder="Dein Vorname" value="${esc(draft.name)}"></label>
+      <button class="btn" id="ob-next" ${draft.name.trim()?"":"disabled"}>Weiter</button>
+      <button class="btn ghost" id="ob-login">Ich habe schon ein Konto</button>
+    </section>`;
+    const inp=$("#ob-name"),nx=$("#ob-next");
+    inp.focus();
+    inp.oninput=()=>{nx.disabled=!inp.value.trim()};
+    const go=()=>{const v=inp.value.trim();if(!v)return;draft.name=v;onboarding(2,draft)};
+    nx.onclick=go;inp.onkeydown=e=>{if(e.key==="Enter")go()};
+    $("#ob-login").onclick=loginOnboarding;
+    return;
+  }
+  app.innerHTML=`<section class="stack welcome pop" style="gap:20px">
+    <div class="steps" aria-hidden="true"><span class="on"></span><span class="on"></span></div>
+    <h1>Wie fit bist du, ${esc(draft.name)}?</h1>
+    <p class="lead">Wähle einen Startpunkt. Du kannst ihn jederzeit in den Einstellungen ändern.</p>
+    <div class="stack" style="gap:10px" role="radiogroup" aria-label="Schwierigkeitsgrad">
+      ${Object.entries(LEVELS).map(([k,v])=>`<button class="choice ${draft.level===k?"on":""}" role="radio" aria-checked="${draft.level===k}" data-l="${k}"><b>${v.label}</b><span>${v.desc}</span></button>`).join("")}
+    </div>
+    <button class="btn" id="ob-go">Los geht’s</button>
+    <button class="btn ghost" id="ob-back">Zurück</button>
+  </section>`;
+  app.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{draft.level=b.dataset.l;onboarding(2,draft)});
+  $("#ob-back").onclick=()=>onboarding(1,draft);
+  $("#ob-go").onclick=()=>{S=fresh(draft.name,draft.level);save();home()};
+}
+
+/* ================= Startbildschirm ================= */
+function intro(){
+  const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  view("center intro",null);
+  app.innerHTML=`<div class="stack" style="gap:24px">
+  <div class="top">${BRAND}<span class="eyebrow">3 Minuten</span></div>
+  <h1 class="pop">Gleiche drei Minuten.<br>Andere Bilanz.</h1>
+  <div class="vs pop">
+    <div class="card scroll"><span class="eyebrow">Scrollen</span><div class="big" id="cR">0</div><ul><li>Reels gesehen</li><li>davon gemerkt: kaum etwas</li></ul></div>
+    <div class="card"><span class="eyebrow" style="color:var(--rechnen)">Denkpause</span><div class="big" id="cS">0</div><ul><li>Dinge gelernt</li><li>Kopf wach, Streak sicher</li></ul></div>
+  </div>
+  <div class="quote pop">„${q[0]}“${q[1]?`<small>${q[1]}</small>`:""}</div>
+  <button class="btn" id="in">${esc(S.name)}, los geht’s</button></div>`;
+  const end={cR:10,cS:13},t0=performance.now();
+  const step=now=>{const p=Math.min(1,(now-t0)/900);for(const id in end){const el=document.getElementById(id);if(el)el.textContent=Math.round(end[id]*p)}if(p<1)requestAnimationFrame(step)};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){$("#cR").textContent=10;$("#cS").textContent=13}else requestAnimationFrame(step);
+  $("#in").onclick=home;
+}
+
+/* ================= Spiele (Startseite) ================= */
+function home(){
+  view("wide","spiele");
+  const L=levelOf(S.xp),done=doneToday(),st=liveStreak();
+  const cycle=done?(st%3===0?3:st%3):st%3;
+  const bLabel=bonusOpen()?"bereit":(done&&st%3===0)?"heute geholt":`noch ${3-cycle} ${3-cycle===1?"Tag":"Tage"}`;
+  app.innerHTML=`
+  <div class="top">${BRAND}<div class="chips"><span class="chip" title="Streak">🔥 ${st}</span><span class="chip" title="Level">Lv ${L.lvl}</span><button class="iconbtn" id="info" aria-label="So funktionieren die Spiele">i</button></div></div>
+  <div class="cols two">
+   <div class="col">
+    <section class="hello">
+     <h1>${greet()},<br><button class="name-btn" id="nm" aria-label="Name ändern">${esc(S.name)}</button>.</h1>
+     <p>${done?"Deine Runde für heute ist erledigt. Die Zeit gehört jetzt dir.":"Bevor du scrollst: vier Minuten für deinen Kopf?"}</p>
+    </section>
+    ${bonusOpen()?`<section class="bonus pop"><span class="eyebrow" style="color:var(--ink)">3 Tage am Stück</span><h2>Bonuslevel freigeschaltet: doppelte XP</h2><button class="btn" id="bonus">Bonuslevel spielen</button></section>`:""}
+    <section class="hero ${done?"done":""}">
+     <div class="row"><span class="eyebrow">${done?"Heute erledigt ✓":"Heutige Runde"}</span><span class="eyebrow">ca. 4 min · ${LV().label}</span></div>
+     <h2>${done?"Lust auf mehr?":"5 Spiele. 13 Fragen. Ein wacher Kopf."}</h2>
+     <div class="games">${ORDER.map(tag).join("")}</div>
+     <button class="btn ${done?"ghost":"gold"}" id="go">${done?"Freie Runde spielen":"Runde starten"}</button>
+    </section>
+   </div>
+   <div class="col">
+    <section class="card stack">
+     <div class="row"><b style="font-family:var(--display);font-weight:900;font-size:18px">Level ${L.lvl}</b><span class="eyebrow">${L.rest} / ${L.need} XP</span></div>
+     <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${L.need}" aria-valuenow="${L.rest}" aria-label="Fortschritt zum nächsten Level"><i style="width:${Math.round(L.rest/L.need*100)}%"></i></div>
+     <div class="row" style="margin-top:6px"><b style="font-family:var(--display);font-weight:900;font-size:18px">Bonuslevel</b><span class="eyebrow">${bLabel}</span></div>
+     <div class="dots3" aria-hidden="true">${[0,1,2].map(i=>`<span class="${i<cycle?"on":""}"></span>`).join("")}</div>
+     <p class="muted" style="font-size:14px">Spiel 3 Tage am Stück und hol dir doppelte XP.</p>
+    </section>
+    <section class="stats">
+     <div class="card stat"><div class="n">${S.facts}</div><div class="l">Fakten gelernt</div></div>
+     <div class="card stat"><div class="n">${S.learned.length}<small>/${GEO.length}</small></div><div class="l">Länder</div></div>
+     <div class="card stat"><div class="n">${S.rounds}</div><div class="l">Runden</div></div>
+    </section>
+    <p class="swap">${S.rounds?`${S.rounds} ${S.rounds===1?"Runde":"Runden"} à 4 Minuten: ${S.rounds*4} Minuten, in denen du gelernt statt gescrollt hast.`:"Deine erste Runde wartet. Danach siehst du hier, was du gelernt hast."}</p>
+   </div>
+  </div>`;
+  $("#go").onclick=()=>start(done?"free":"daily");
+  if(bonusOpen())$("#bonus").onclick=()=>start("bonus");
+  $("#nm").onclick=settingsView;
+  $("#info").onclick=infoView;
+}
+
+function infoView(){
+  view("","");
+  const rows=[
+   ["geo","Drei Fragen rund um die Welt: immer eine Hauptstadt, dazu zwei aus Flagge, Landesumriss und Steckbrief. Die falschen Antworten kommen vom selben Kontinent. 20 XP pro richtiger Antwort."],
+   ["wissen","Drei Fragen aus drei verschiedenen Bereichen, von Geschichte bis Weltall. Nach jeder Antwort gibt es einen kurzen Fakt. 20 XP pro richtiger Antwort."],
+   ["fermi","Zwei Fragen, deren genaue Antwort kaum jemand kennt. Gib deine Schätzung als Zahl ein. Je näher du dran bist, desto mehr XP, bis zu 30."],
+   ["rechnen",`Vier Aufgaben mit je ${LV().t/1000} Sekunden Zeit. Schnell und richtig bringt 15 XP, richtig, aber zu langsam, 8 XP.`],
+   ["sudoku","Fülle das 4×4-Feld so, dass jede Zahl von 1 bis 4 in jeder Zeile, Spalte und jedem 2×2-Block genau einmal steht. Ohne Fehler 60 XP, jeder Fehler kostet 10."]];
+  app.innerHTML=`<div class="top">${BRAND}<button class="x" id="back">Zurück</button></div>
+  <h1 class="page-title">So funktioniert’s</h1>
+  <p class="muted" style="font-size:17px">Jeden Tag eine Runde aus fünf kurzen Spielen, zusammen etwa 4 Minuten.</p>
+  ${rows.map(([k,t])=>`<section class="card stack" style="gap:10px"><div>${tag(k)}</div><p>${t}</p></section>`).join("")}
+  <section class="bonus" style="gap:8px"><span class="eyebrow" style="color:var(--ink)">Streak &amp; Bonuslevel</span><p>Spiel jeden Tag deine Runde, dann wächst dein Streak. Alle 3 Tage am Stück schaltest du ein Bonuslevel mit doppelten XP frei. Abgebrochene Runden zählen nicht.</p></section>
+  <p class="muted" style="font-weight:600">Aktueller Schwierigkeitsgrad: ${LV().label}. Ändern kannst du ihn in den Einstellungen.</p>
+  <button class="btn" id="back2">Verstanden</button>`;
+  $("#back").onclick=home;$("#back2").onclick=home;
+}
+
+/* ================= Freunde ================= */
+function friendsView(msg){
+  if(ACC.profile)return friendsOnline(msg);
+  return friendsLocal(msg);
+}
+function friendsLocal(msg){
+  view("wide","freunde");
+  const me={n:S.name,x:S.xp,s:liveStreak(),c:S.learned.length,d:today(),me:true};
+  const friends=S.friends||[];
+  const list=[me,...friends].sort((a,b)=>b.x-a.x);
+  const code="DP1-"+enc({n:S.name,x:S.xp,s:liveStreak(),c:S.learned.length,d:today()});
+  const shareText=`Lass uns bei Denkpause gegeneinander spielen! Statt Reels: 4 Minuten Brain-Games.\n${APP_URL}\nMein Freundescode: ${code}`;
+  app.innerHTML=`<div class="top">${BRAND}</div>
+  <h1 class="page-title">Freunde</h1>
+  <div class="cols two">
+   <div class="col">
+    <section class="card stack">
+     <div class="row"><span class="eyebrow">Rangliste</span><span class="eyebrow">nach XP</span></div>
+     <ol class="rank">${list.map((f,i)=>`<li class="${f.me?"me":""}"><span class="pos">${i+1}</span>${avatar(f.n)}<span class="who"><b>${esc(f.n)}${f.me?" (du)":""}</b><small>🔥 ${f.s} · ${f.c} Länder${f.me?"":` · ${f.d===today()?"heute":f.d===yesterday()?"gestern":f.d.slice(8,10)+"."+f.d.slice(5,7)+"."}`}</small></span><span class="xp">${fmt(f.x)} XP</span></li>`).join("")}</ol>
+     ${friends.length?"":`<div class="empty"><b style="font-family:var(--display);font-size:18px">Noch allein an der Spitze.</b><p class="muted">Lade Freunde ein und vergleicht eure Fortschritte.</p></div>`}
+    </section>
+   </div>
+   <div class="col">
+    <section class="hero" style="gap:14px">
+     <span class="eyebrow">Freunde einladen</span>
+     <h2 style="font-size:24px">Teile Denkpause und deinen Code.</h2>
+     <p style="color:#D8D3C8">Dein Freund öffnet den Link, fügt deinen Code unter „Code hinzufügen“ ein und sieht deinen Stand.</p>
+     <button class="btn gold" id="share">Einladung teilen</button>
+    </section>
+    <section class="card stack">
+     <span class="eyebrow">Dein Freundescode</span>
+     <div class="codebox"><input id="myc" readonly value="${code}" aria-label="Dein Freundescode"><button class="mini" id="cp">Kopieren</button></div>
+    </section>
+    <section class="card stack">
+     <span class="eyebrow">Code hinzufügen</span>
+     <div class="codebox"><input id="fc" placeholder="DP1-…" aria-label="Freundescode einfügen" autocomplete="off"><button class="mini" id="add">Hinzufügen</button></div>
+     ${msg?`<p class="msg ${msg[0]}">${msg[1]}</p>`:""}
+    </section>
+    <section class="card stack" style="gap:10px"><span class="eyebrow">Live-Rangliste</span><p>Mit einem Konto siehst du die Fortschritte deiner Freunde automatisch und fügst sie per Benutzername hinzu.</p><button class="btn" id="to-acc">Konto einrichten</button></section>
+   </div>
+  </div>`;
+  $("#cp").onclick=()=>copyText($("#cp"),code,$("#myc"));
+  $("#to-acc").onclick=settingsView;
+  $("#share").onclick=async()=>{
+    if(navigator.share){try{await navigator.share({title:"Denkpause",text:shareText});return}catch(e){if(e&&e.name==="AbortError")return}}
+    copyText($("#share"),shareText);
+  };
+  $("#add").onclick=()=>{
+    const f=dec($("#fc").value.trim().replace(/^DP1-/,""));
+    if(!f||typeof f.n!=="string"||typeof f.x!=="number")return friendsView(["err","Der Code ist ungültig. Kopiere ihn bitte vollständig."]);
+    if(f.n===S.name&&f.x===S.xp)return friendsView(["err","Das ist dein eigener Code."]);
+    S.friends=friends.filter(x=>x.n!==f.n);S.friends.push({n:String(f.n).slice(0,20),x:f.x|0,s:f.s|0,c:f.c|0,d:String(f.d||today()).slice(0,10)});save();
+    friendsView(["ok",`${esc(f.n)} ist jetzt in deiner Rangliste.`]);
+  };
+}
+
+/* ================= Einstellungen ================= */
+function settingsView(msg){
+  view("wide","einstellungen");
+  const lv=S.level||"mittel";
+  app.innerHTML=`<div class="top">${BRAND}</div>
+  <h1 class="page-title">Einstellungen</h1>
+  <div class="cols two">
+   <div class="col">
+    <div class="group"><span class="eyebrow">Profil</span>
+     <div class="list">
+      <div class="item">${avatar(S.name,"lg")}<div class="lbl"><span style="font-family:var(--display);font-weight:900;font-size:20px">${esc(S.name)}</span><small>Level ${levelOf(S.xp).lvl} · ${fmt(S.xp)} XP · ${S.rounds} Runden</small></div></div>
+      <div class="item block" style="gap:8px"><label class="eyebrow" for="nmi">Name ändern</label>
+       <div class="namefield"><input id="nmi" maxlength="20" value="${esc(S.name)}" autocomplete="given-name"><button class="mini" id="nms">Speichern</button></div></div>
+     </div>
+    </div>
+    <div class="group"><span class="eyebrow">Spiel</span>
+     <div class="list">
+      <div class="item block" style="gap:12px"><span class="lbl">Schwierigkeitsgrad</span>
+       <div class="seg" role="radiogroup" aria-label="Schwierigkeitsgrad">${Object.entries(LEVELS).map(([k,v])=>`<button role="radio" aria-checked="${k===lv}" class="${k===lv?"on":""}" data-l="${k}">${v.label}</button>`).join("")}</div>
+       <p class="muted" style="font-size:15px">${LEVELS[lv].desc}</p></div>
+      <button class="link" id="howto"><span>Spielanleitung</span>${CHEV}</button>
+     </div>
+    </div>
+   </div>
+   <div class="col">
+    <div class="group"><span class="eyebrow">Konto</span>
+     <div class="list" id="acc"></div>
+    </div>
+    <div class="group"><span class="eyebrow">Daten</span>
+     <div class="list">
+      <div class="item block" style="gap:10px"><span class="lbl">Spielstand sichern<small>Kopiere den Code und bewahre ihn auf, z. B. in deinen Notizen.</small></span>
+       <div class="codebox"><input id="bk" readonly value="DPB-${enc(S)}" aria-label="Sicherungscode"><button class="mini" id="cp2">Kopieren</button></div></div>
+      <div class="item block" style="gap:10px"><span class="lbl">Spielstand wiederherstellen<small>Füge einen Sicherungscode ein. Der aktuelle Stand wird ersetzt.</small></span>
+       <div class="codebox"><input id="rs" placeholder="DPB-…" aria-label="Sicherungscode einfügen" autocomplete="off"><button class="mini" id="imp">Wiederherstellen</button></div>
+       ${msg?`<p class="msg ${msg[0]}">${msg[1]}</p>`:""}</div>
+     </div>
+    </div>
+    <div class="group"><span class="eyebrow">Über</span>
+     <div class="list">
+      <button class="link" id="priv"><span>Datenschutz</span>${CHEV}</button>
+      <a class="link" href="${REPO_URL}" target="_blank" rel="noopener"><span>Projekt auf GitHub</span>${CHEV}</a>
+      <div class="item block"><button class="btn ghost" id="reset">Spielstand löschen</button></div>
+     </div>
+    </div>
+    <p class="version">denkpause. Version ${VERSION}</p>
+   </div>
+  </div>`;
+  const saveName=()=>{const v=$("#nmi").value.trim();if(v){S.name=v;save();settingsView(["ok","Name gespeichert."])}};
+  $("#nms").onclick=saveName;$("#nmi").onkeydown=e=>{if(e.key==="Enter")saveName()};
+  app.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{S.level=b.dataset.l;save();settingsView()});
+  $("#howto").onclick=infoView;$("#priv").onclick=privacyView;
+  ACC.msg=null;accRender($("#acc"),{});
+  $("#cp2").onclick=()=>copyText($("#cp2"),$("#bk").value,$("#bk"));
+  const imp=$("#imp");
+  imp.onclick=()=>{
+    const o=dec($("#rs").value.trim().replace(/^DPB-/,""));
+    if(!o||typeof o.xp!=="number"||!Array.isArray(o.learned)||!o.name)return settingsView(["err","Der Sicherungscode ist ungültig."]);
+    if(!imp.dataset.arm){imp.dataset.arm="1";imp.textContent="Ersetzen?";imp.classList.add("danger");return}
+    delete o.example;S=Object.assign(fresh(o.name),o);save();settingsView(["ok","Spielstand wiederhergestellt."]);
+  };
+  twoTap($("#reset"),"Wirklich alles löschen?",async()=>{await signOut();try{localStorage.removeItem(KEY)}catch(e){}S=null;onboarding(1)});
+}
+
+/* ================= Konto (Supabase) ================= */
+const SUPA_URL="https://lbjxqpttvkrgdxxyjczs.supabase.co";
+const SUPA_KEY="sb_publishable_SIAy6DYcPOrLn_JUH6jtLA_LXaRbV0B";
+const SUPA_VER="2.110.1";
+const ACC={sb:null,ready:false,user:null,profile:null,step:"email",email:"",msg:null,syncAt:null,busy:false};
+let CUR=null,syncTimer=null;
+async function loadSupabase(){
+  if(window.__DP_FAKE_SB)return window.__DP_FAKE_SB;
+  try{const m=await import(`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@${SUPA_VER}/+esm`);if(m.createClient)return m.createClient}catch(e){}
+  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src=`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@${SUPA_VER}/dist/umd/supabase.js`;s.onload=ok;s.onerror=no;document.head.appendChild(s)});if(window.supabase&&window.supabase.createClient)return window.supabase.createClient}catch(e){}
+  return null;
+}
+async function initAccount(){
+  try{
+    const create=await loadSupabase();
+    if(create){
+      ACC.sb=create(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"denkpause.auth"}});
+      const {data}=await ACC.sb.auth.getSession();
+      ACC.user=(data&&data.session&&data.session.user)||null;
+      if(ACC.user)await pullProfile();
+    }
+  }catch(e){ACC.msg=["err","Verbindung zum Konto fehlgeschlagen. Prüfe deine Internetverbindung."]}
+  ACC.ready=true;
+  if(CUR==="einstellungen")settingsView();else if(CUR==="freunde")friendsView();else if(CUR==="spiele")home();
+}
+const toProfile=()=>({display_name:S.name,level:S.level||"mittel",xp:S.xp|0,streak:S.streak|0,last_played:S.last||null,rounds:S.rounds|0,facts:S.facts|0,learned:S.learned||[],state:{bonusDay:S.bonusDay||null,bonusDone:S.bonusDone||null,seen:S.seen||{}}});
+function fromProfile(p,friends){const st=p.state||{};return Object.assign(fresh(p.display_name,p.level),{xp:p.xp|0,streak:p.streak|0,last:p.last_played||null,rounds:p.rounds|0,facts:p.facts|0,learned:p.learned||[],bonusDay:st.bonusDay||null,bonusDone:st.bonusDone||null,seen:st.seen||{},friends:friends||[]})}
+async function pullProfile(){
+  const {data,error}=await ACC.sb.from("profiles").select("*").eq("id",ACC.user.id).maybeSingle();
+  if(error)throw error;
+  ACC.profile=data||null;
+  if(data){
+    if(!S||data.xp>=S.xp){S=fromProfile(data,S&&S.friends);saveLocal();ACC.syncAt=Date.now()}
+    else syncNow();
+  }
+}
+function syncSoon(){if(!ACC.profile)return;clearTimeout(syncTimer);syncTimer=setTimeout(syncNow,1200)}
+async function syncNow(){
+  if(!ACC.sb||!ACC.profile||!S)return;
+  try{const {error}=await ACC.sb.from("profiles").update(toProfile()).eq("id",ACC.user.id);if(!error)ACC.syncAt=Date.now()}catch(e){}
+}
+const suggestName=n=>(n||"").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[^a-z0-9_]/g,"").slice(0,20)||"spieler";
+const ago=t=>{if(!t)return"noch nicht";const s=Math.round((Date.now()-t)/1000);return s<60?"gerade eben":s<3600?`vor ${Math.round(s/60)} Min.`:`vor ${Math.round(s/3600)} Std.`};
+async function signOut(){try{if(ACC.sb)await ACC.sb.auth.signOut()}catch(e){}ACC.user=null;ACC.profile=null;ACC.step="email";ACC.syncAt=null}
+
+/* Konto-Box: wird in Einstellungen und beim Erststart verwendet */
+function accRender(el,ctx){
+  if(!el)return;ctx=ctx||{};
+  const m=ACC.msg?`<p class="msg ${ACC.msg[0]}">${ACC.msg[1]}</p>`:"";
+  if(!ACC.ready){el.innerHTML=`<div class="item"><span class="lbl">Konto<small>Verbindung wird hergestellt …</small></span></div>`;return}
+  if(!ACC.sb){el.innerHTML=`<div class="item"><span class="lbl">Konto<small>Gerade nicht erreichbar. Prüfe deine Internetverbindung und öffne die App erneut.</small></span></div>`;return}
+  if(ACC.user&&ACC.profile){
+    el.innerHTML=`<div class="item">${avatar(ACC.profile.display_name)}<div class="lbl">@${esc(ACC.profile.username)}<small>${esc(ACC.user.email||"")} · synchronisiert ${ago(ACC.syncAt)}</small></div></div>
+     <div class="item" style="gap:8px;flex-wrap:wrap"><button class="mini soft" id="acc-sync">Jetzt synchronisieren</button><button class="mini soft" id="acc-out">Abmelden</button><button class="mini soft" id="acc-del">Konto löschen</button></div>${m?`<div class="item">${m}</div>`:""}`;
+    $("#acc-sync").onclick=async()=>{await syncNow();ACC.msg=["ok","Synchronisiert."];accRender(el,ctx)};
+    $("#acc-out").onclick=async()=>{await signOut();ACC.msg=["ok","Abgemeldet. Dein Spielstand bleibt auf diesem Gerät."];accRender(el,ctx)};
+    twoTap($("#acc-del"),"Wirklich endgültig löschen?",async()=>{
+      const {error}=await ACC.sb.rpc("delete_my_account");
+      if(error){ACC.msg=["err","Löschen fehlgeschlagen. Bitte später erneut versuchen."];return accRender(el,ctx)}
+      await signOut();ACC.msg=["ok","Dein Konto und alle Online-Daten wurden gelöscht."];accRender(el,ctx)});
+    return;
+  }
+  if(ACC.user&&!ACC.profile){
+    if(!S){el.innerHTML=`<div class="item block" style="gap:10px"><span class="lbl">Angemeldet als ${esc(ACC.user.email||"")}<small>Zu dieser E-Mail gibt es noch keinen Spielstand. Leg zuerst los, danach verknüpfst du dein Konto in den Einstellungen.</small></span><button class="btn" id="acc-cont">Weiter</button></div>`;$("#acc-cont").onclick=()=>onboarding(1);return}
+    el.innerHTML=`<div class="item block" style="gap:10px"><span class="lbl">Benutzername wählen<small>Freunde finden dich darüber. 3–20 Zeichen: Kleinbuchstaben, Zahlen, Unterstrich.</small></span>
+      <div class="namefield"><input id="acc-user" maxlength="20" autocapitalize="none" autocomplete="username" value="${esc(suggestName(S.name))}" aria-label="Benutzername"><button class="mini" id="acc-save">Speichern</button></div>${m}</div>`;
+    const inp=$("#acc-user");inp.oninput=()=>{inp.value=inp.value.toLowerCase().replace(/[^a-z0-9_]/g,"")};
+    $("#acc-save").onclick=async()=>{
+      const u=inp.value.trim();
+      if(!/^[a-z0-9_]{3,20}$/.test(u)){ACC.msg=["err","Bitte 3–20 Zeichen: Kleinbuchstaben, Zahlen oder Unterstrich."];return accRender(el,ctx)}
+      const av=await ACC.sb.rpc("username_available",{p_username:u});
+      if(av.error||av.data===false){ACC.msg=["err",av.error?"Prüfung fehlgeschlagen. Bitte erneut versuchen.":`@${u} ist schon vergeben.`];return accRender(el,ctx)}
+      const {error}=await ACC.sb.from("profiles").insert(Object.assign({id:ACC.user.id,username:u},toProfile()));
+      if(error){ACC.msg=["err",error.code==="23505"?`@${u} ist schon vergeben.`:"Speichern fehlgeschlagen. Bitte erneut versuchen."];return accRender(el,ctx)}
+      ACC.profile=Object.assign({id:ACC.user.id,username:u},toProfile());ACC.syncAt=Date.now();ACC.msg=["ok","Konto eingerichtet. Dein Fortschritt wird ab jetzt online gesichert."];
+      ctx.done?ctx.done():accRender(el,ctx);
+    };
+    return;
+  }
+  if(ACC.step==="code"){
+    el.innerHTML=`<div class="item block" style="gap:10px"><span class="lbl">Code eingeben<small>Wir haben dir einen Code an ${esc(ACC.email)} geschickt. Schau auch im Spam-Ordner nach.</small></span>
+      <div class="namefield"><input id="acc-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456" aria-label="Code aus der E-Mail"><button class="mini" id="acc-verify">Anmelden</button></div>${m}
+      <button class="mini soft" id="acc-back" style="align-self:flex-start">Andere E-Mail verwenden</button></div>`;
+    const c=$("#acc-code");c.focus();c.oninput=()=>{c.value=c.value.replace(/\D/g,"")};
+    const verify=async()=>{
+      if(ACC.busy)return;const token=c.value.trim();if(token.length<6){ACC.msg=["err","Bitte den vollständigen Code eingeben."];return accRender(el,ctx)}
+      ACC.busy=true;const {data,error}=await ACC.sb.auth.verifyOtp({email:ACC.email,token,type:"email"});ACC.busy=false;
+      if(error||!data||!data.user){ACC.msg=["err","Der Code ist falsch oder abgelaufen. Fordere bei Bedarf einen neuen an."];return accRender(el,ctx)}
+      ACC.user=data.user;ACC.msg=null;
+      try{await pullProfile()}catch(e){}
+      if(ACC.profile){ACC.msg=["ok","Angemeldet. Dein Spielstand ist synchronisiert."];return ctx.done?ctx.done():accRender(el,ctx)}
+      accRender(el,ctx);
+    };
+    $("#acc-verify").onclick=verify;c.onkeydown=e=>{if(e.key==="Enter")verify()};
+    $("#acc-back").onclick=()=>{ACC.step="email";ACC.msg=null;accRender(el,ctx)};
+    return;
+  }
+  el.innerHTML=`<div class="item block" style="gap:10px"><span class="lbl">${ctx.onboarding?"Mit E-Mail anmelden":"Konto anlegen oder anmelden"}<small>${ctx.onboarding?"Wir schicken dir einen Code, damit holst du deinen Spielstand zurück.":"Sichere deinen Fortschritt online und spiel mit Freunden in einer Live-Rangliste. Kein Passwort nötig: Du bekommst einen Code per E-Mail."}</small></span>
+    <div class="namefield"><input id="acc-mail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="name@beispiel.de" value="${esc(ACC.email)}" aria-label="E-Mail-Adresse"><button class="mini" id="acc-send">Code senden</button></div>${m}
+    <p class="muted" style="font-size:13px">Mit der Anmeldung gilt der <button class="inline-link" id="acc-priv">Datenschutzhinweis</button>.</p></div>`;
+  const send=async()=>{
+    if(ACC.busy)return;const email=$("#acc-mail").value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ACC.msg=["err","Bitte eine gültige E-Mail-Adresse eingeben."];return accRender(el,ctx)}
+    ACC.busy=true;const {error}=await ACC.sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});ACC.busy=false;
+    if(error){ACC.msg=["err",/rate|limit|seconds/i.test(error.message||"")?"Zu viele Anfragen. Bitte warte kurz und versuch es dann erneut.":"Senden fehlgeschlagen. Bitte erneut versuchen."];return accRender(el,ctx)}
+    ACC.email=email;ACC.step="code";ACC.msg=null;accRender(el,ctx);
+  };
+  $("#acc-send").onclick=send;$("#acc-mail").onkeydown=e=>{if(e.key==="Enter")send()};
+  $("#acc-priv").onclick=privacyView;
+}
+
+function loginOnboarding(){
+  view("center",null);ACC.msg=null;
+  app.innerHTML=`<section class="stack welcome pop" style="gap:20px">
+    ${ICON(56)}<h1 style="font-size:38px">Willkommen zurück.</h1>
+    <div class="list" id="acc-ob"></div>
+    <button class="btn ghost" id="ob-new">Neu starten ohne Konto</button></section>`;
+  $("#ob-new").onclick=()=>onboarding(1);
+  accRender($("#acc-ob"),{onboarding:true,done:home});
+}
+
+function privacyView(){
+  const back=CUR==="freunde"?friendsView:S?settingsView:()=>onboarding(1);
+  view("",null);
+  app.innerHTML=`<div class="top">${BRAND}<button class="x" id="back">Zurück</button></div>
+  <h1 class="page-title">Datenschutz</h1>
+  <section class="card stack" style="gap:10px"><span class="eyebrow">Ohne Konto</span>
+   <p>Dein Spielstand (Name, Fortschritt, Einstellungen) wird nur auf deinem Gerät gespeichert. Es gibt kein Tracking und keine Werbung.</p>
+   <p class="muted" style="font-size:15px">Beim Laden der App werden Schriftarten von Google Fonts und die Konto-Bibliothek von jsDelivr abgerufen. Dabei sehen diese Dienste technisch bedingt deine IP-Adresse.</p></section>
+  <section class="card stack" style="gap:10px"><span class="eyebrow">Mit Konto</span>
+   <p>Gespeichert werden deine E-Mail-Adresse (nur für die Anmeldung, für niemanden sichtbar), Benutzername, Anzeigename und dein Spielfortschritt.</p>
+   <p>Die Daten liegen bei Supabase auf Servern in Frankfurt (EU). Sie werden nur für Anmeldung, Synchronisierung und die Rangliste verwendet und nicht weitergegeben.</p>
+   <p>Deine Freunde sehen nur Anzeigename, Benutzername, XP, Streak und die Zahl gelernter Länder.</p></section>
+  <section class="card stack" style="gap:10px"><span class="eyebrow">Löschen</span>
+   <p>Unter Einstellungen → Konto → „Konto löschen“ entfernst du dein Konto und alle Online-Daten sofort und vollständig.</p></section>
+  <section class="card stack" style="gap:10px"><span class="eyebrow">Kontakt</span>
+   <p>Denkpause ist ein privates, nicht kommerzielles Projekt von Moritz Klör. Fragen gern über das <a href="${REPO_URL}" target="_blank" rel="noopener">GitHub-Projekt</a>.</p></section>
+  <button class="btn" id="back2">Zurück</button>`;
+  $("#back").onclick=back;$("#back2").onclick=back;
+}
+
+/* Freunde mit Konto: Live-Rangliste */
+function friendsOnline(msg){
+  view("wide","freunde");
+  const shareText=`Lass uns bei Denkpause gegeneinander spielen! Statt Reels: 4 Minuten Brain-Games.\n${APP_URL}\nFüg mich hinzu: @${ACC.profile.username}`;
+  app.innerHTML=`<div class="top">${BRAND}<span class="chip">@${esc(ACC.profile.username)}</span></div>
+  <h1 class="page-title">Freunde</h1>
+  <div class="cols two">
+   <div class="col">
+    <section class="card stack">
+     <div class="row"><span class="eyebrow">Live-Rangliste</span><span class="eyebrow">nach XP</span></div>
+     <ol class="rank" id="lb"><li><span class="who"><small>Rangliste wird geladen …</small></span></li></ol>
+    </section>
+   </div>
+   <div class="col">
+    <section class="card stack">
+     <span class="eyebrow">Freund hinzufügen</span>
+     <div class="codebox"><input id="fu" placeholder="Benutzername" autocapitalize="none" autocomplete="off" aria-label="Benutzername des Freundes"><button class="mini" id="add">Hinzufügen</button></div>
+     ${msg?`<p class="msg ${msg[0]}">${msg[1]}</p>`:""}
+    </section>
+    <section class="hero" style="gap:14px">
+     <span class="eyebrow">Freunde einladen</span>
+     <h2 style="font-size:24px">Dein Benutzername: @${esc(ACC.profile.username)}</h2>
+     <p style="color:#D8D3C8">Teile den Link. Dein Freund legt ein Konto an und fügt dich über deinen Benutzernamen hinzu.</p>
+     <button class="btn gold" id="share">Einladung teilen</button>
+    </section>
+   </div>
+  </div>`;
+  $("#share").onclick=async()=>{if(navigator.share){try{await navigator.share({title:"Denkpause",text:shareText});return}catch(e){if(e&&e.name==="AbortError")return}}copyText($("#share"),shareText)};
+  const add=async()=>{
+    const u=$("#fu").value.trim().replace(/^@/,"").toLowerCase();if(!u)return;
+    const {data,error}=await ACC.sb.rpc("add_friend",{p_username:u});
+    const t={ok:["ok",`@${esc(u)} ist jetzt dein Freund.`],not_found:["err",`@${esc(u)} gibt es nicht. Prüf die Schreibweise.`],self:["err","Das bist du selbst."],exists:["err",`@${esc(u)} ist schon in deiner Liste.`],no_profile:["err","Richte zuerst dein Konto ein."]};
+    friendsOnline(error?["err","Hinzufügen fehlgeschlagen. Bitte erneut versuchen."]:t[data]||["err","Unbekannter Fehler."]);
+  };
+  $("#add").onclick=add;$("#fu").onkeydown=e=>{if(e.key==="Enter")add()};
+  syncNow().then(()=>ACC.sb.rpc("get_leaderboard")).then(({data,error})=>{
+    const lb=$("#lb");if(!lb)return;
+    if(error||!data){lb.innerHTML=`<li><span class="who"><small>Rangliste konnte nicht geladen werden.</small></span></li>`;return}
+    const live=r=>(r.last_played===today()||r.last_played===yesterday())?r.streak:0;
+    lb.innerHTML=data.map((f,i)=>`<li class="${f.is_me?"me":""}"><span class="pos">${i+1}</span>${avatar(f.display_name)}<span class="who"><b>${esc(f.display_name)}${f.is_me?" (du)":""}</b><small>@${esc(f.username)} · 🔥 ${live(f)} · ${f.countries} Länder</small></span><span class="xp">${fmt(f.xp)} XP</span>${f.is_me?"":`<button class="iconbtn rm" data-u="${esc(f.username)}" aria-label="${esc(f.display_name)} entfernen" title="Entfernen">×</button>`}</li>`).join("")
+      +(data.length<2?`<li style="border:none"><div class="empty"><b style="font-family:var(--display);font-size:18px">Noch allein an der Spitze.</b><p class="muted">Füge Freunde über ihren Benutzernamen hinzu.</p></div></li>`:"");
+    lb.querySelectorAll(".rm").forEach(b=>b.onclick=async()=>{
+      if(!b.dataset.arm){b.dataset.arm="1";b.classList.add("arm");b.textContent="?";setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.classList.remove("arm");b.textContent="×"}},3000);return}
+      await ACC.sb.rpc("remove_friend",{p_username:b.dataset.u});friendsOnline(["ok",`@${esc(b.dataset.u)} wurde entfernt.`]);
+    });
+  });
+}
+
+/* ================= Runde ================= */
+function pickFresh(list,key,n,r,keep){
+  const seen=(S.seen&&S.seen[key])||[];
+  let pool=shuffle(list.map((_,i)=>i),r);
+  if(keep){const f=pool.filter(i=>keep(list[i]));if(f.length>=n)pool=f}
+  return pool.filter(i=>!seen.includes(i)).concat(pool.filter(i=>seen.includes(i))).slice(0,n);
+}
+function markSeen(key,ids,max){S.seen=S.seen||{};S.seen[key]=(S.seen[key]||[]).filter(i=>!ids.includes(i)).concat(ids).slice(-max)}
+const flag=iso=>iso.toUpperCase().replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt(0)));
+function geoOpts(idx,field,r){
+  const g=GEO[idx],n=LV().opts-1,easy=S.level==="leicht",others=GEO.filter((x,i)=>i!==idx);
+  const tiers=[others.filter(x=>x[3]===g[3]&&(!easy||EASY.has(x[0]))),others.filter(x=>x[3]===g[3]),others.filter(x=>!easy||EASY.has(x[0])),others];
+  const picked=[];for(const t of tiers){for(const x of shuffle(t,r)){if(picked.length>=n)break;if(!picked.includes(x))picked.push(x)}}
+  return shuffle([g[field],...picked.map(x=>x[field])],r);
+}
+function start(mode){
+  view("",null);
+  const r=rng(mode==="daily"?today()+S.level:today()+mode+Math.random());
+  const keepGeo=S.level==="leicht"?g=>EASY.has(g[0]):S.level==="schwer"?g=>!EASY.has(g[0]):null;
+  const types=["cap",...shuffle(["flag","shape","clue"],r).slice(0,2)];
+  const cand=pickFresh(GEO,"geo",GEO.length,r,keepGeo),used=[];
+  const take=ok=>{const i=cand.find(i=>!used.includes(i)&&ok(i))??cand.find(i=>!used.includes(i));used.push(i);return i};
+  const ci=types.includes("clue")?pickFresh(CLUES,"clue",1,r):[];
+  const geo=types.map(type=>{
+    if(type==="clue"){const [cat,hint,land]=CLUES[ci[0]],idx=GEO.findIndex(g=>g[0]===land),g=GEO[idx];return{type,cat,hint,c:land,cont:g[3],f:g[4],opts:geoOpts(idx,0,r)}}
+    const idx=take(i=>type!=="shape"||!!SHAPES[GEO[i][2]]),[c,cap,iso,cont,f]=GEO[idx];
+    return type==="cap"?{type,c,cap,cont,f,opts:geoOpts(idx,1,r)}:{type,c,iso,cont,f,opts:geoOpts(idx,0,r)};
+  });
+  const gi=used;
+  const wi=[],cats=new Set();
+  for(const i of pickFresh(WISSEN,"wis",WISSEN.length,r)){if(wi.length>=3)break;if(!cats.has(WISSEN[i][0])){cats.add(WISSEN[i][0]);wi.push(i)}}
+  const wis=wi.map(i=>{const [cat,q,a,w,f]=WISSEN[i];return{cat,q,a,f,opts:shuffle([a,...shuffle(w,r).slice(0,LV().opts-1)],r)}});
+  const fi=pickFresh(FERMI,"fer",2,r),fer=fi.map(i=>FERMI[i]);
+  const L=S.level||"mittel",N=(lo,hi)=>lo+Math.floor(r()*(hi-lo+1));
+  const math=Array.from({length:4},()=>{
+    let a,b,op,ans;const t=Math.floor(r()*3);
+    if(t===0){[a,b]=L==="leicht"?[N(5,40),N(5,40)]:L==="schwer"?[N(60,259),N(40,199)]:[N(12,89),N(11,88)];op="+";ans=a+b}
+    else if(t===1){a=L==="leicht"?N(20,60):L==="schwer"?N(120,319):N(40,99);b=L==="leicht"?N(3,a-5):L==="schwer"?N(20,a-30):N(7,a-4);op="−";ans=a-b}
+    else{[a,b]=L==="leicht"?[N(2,9),N(2,9)]:L==="schwer"?[N(6,19),N(6,15)]:[N(3,12),N(4,12)];op="×";ans=a*b}
+    const set=new Set([ans]);for(const x of shuffle([1,2,10,-1,-2,-10,9,11],r)){if(set.size>=4)break;if(ans+x>0)set.add(ans+x)}
+    return{txt:`${a} ${op} ${b}`,ans,opts:shuffle([...set],r)}});
+  R={mode,mult:mode==="bonus"?2:1,stage:0,i:0,geo,wis,fer,math,sud:makeSudoku(r),xp:0,correct:0,total:13,learnedNow:[],ids:{geo:gi,clue:ci,wis:wi,fer:fi}};
+  next();
+}
+function next(){[geoQ,wisQ,ferQ,mathQ,sudQ][R.stage]()}
+function advance(len){if(!R)return;R.i++;if(R.i>=len){R.i=0;R.stage++}window.scrollTo(0,0);next()}
+function head(k,label){
+  return `<div class="gamebar"><div class="progress" aria-hidden="true">${ORDER.map((g,i)=>`<span style="${i<=R.stage?`background:${GAMES[g].c}`:""}"></span>`).join("")}</div><button class="x" id="quit">Abbrechen</button></div>
+  <div class="gamehead">${tag(k)}<span class="eyebrow">${label}</span>${R.mult>1?'<span class="chip" style="margin-left:auto;background:var(--reward)">2× XP</span>':""}</div>`;
+}
+app.addEventListener("click",e=>{
+  const b=e.target.closest("#quit");if(!b)return;
+  if(b.dataset.arm){cancelAnimationFrame(tmr);R=null;home();return}
+  b.dataset.arm="1";b.classList.add("arm");b.textContent="Wirklich beenden?";
+  setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.classList.remove("arm");b.textContent="Abbrechen"}},3000);
+});
+function award(n){R.xp+=n*R.mult}
+function mc(k,label,qHtml,opts,answer,fact,len,learnLabel){
+  app.innerHTML=`${head(k,label)}<div class="q pop">${qHtml}</div>
+  <div class="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join("")}</div><div id="fx"></div>`;
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const ok=opts[+b.dataset.i]===answer;
+    app.querySelectorAll(".opt").forEach(x=>{x.onclick=null;if(opts[+x.dataset.i]===answer)x.classList.add("right")});
+    if(!ok)b.classList.add("wrong");
+    const sh=app.querySelector(".shape");if(sh)sh.classList.add(ok?"ok":"no");
+    if(ok){award(20);R.correct++}
+    R.learnedNow.push([k,learnLabel]);
+    $("#fx").innerHTML=`<div class="fact pop" style="--c:${GAMES[k].c}"><b>${ok?"Richtig!":"Fast."}</b> ${fact}</div><div style="height:12px"></div><button class="btn" id="nx">Weiter</button>`;
+    $("#nx").onclick=()=>advance(len);$("#nx").scrollIntoView({block:"nearest",behavior:"smooth"});
+  });
+}
+function geoQ(){
+  const q=R.geo[R.i];
+  if(q.type==="cap")mc("geo",`${R.i+1} von 3 · ${q.cont}`,`Was ist die Hauptstadt von ${q.c}?`,q.opts,q.cap,q.f||`${q.cap} ist die Hauptstadt von ${q.c}.`,3,`${q.c}: ${q.cap}`);
+  else if(q.type==="clue")mc("geo",`${R.i+1} von 3 · Steckbrief: ${q.cat}`,`${q.hint}<span class="sub">Welches Land ist gemeint?</span>`,q.opts,q.c,`Gesucht war ${q.c}.${q.f?" "+q.f:""}`,3,`${q.hint.replace(/\.$/,"")}: ${q.c}`);
+  else if(q.type==="shape")mc("geo",`${R.i+1} von 3 · Umriss`,`<div class="shape pop"><svg viewBox="-4 -4 108 108" role="img" aria-label="Umriss eines Landes"><path d="${SHAPES[q.iso]}"/></svg><span class="shape-name" aria-hidden="true">${q.c}</span></div>Welches Land hat diesen Umriss?<span class="sub">Tipp: Die Antworten liegen alle in ${q.cont==="Afrika"||q.cont==="Asien"||q.cont==="Europa"||q.cont==="Ozeanien"?q.cont:q.cont==="Nordamerika"?"Nord- und Mittelamerika":"Südamerika"}.</span>`,q.opts,q.c,`Das ist ${q.c}.${q.f?" "+q.f:""}`,3,`Umriss: ${q.c}`);
+  else mc("geo",`${R.i+1} von 3 · Flagge`,`<span class="flag" aria-hidden="true">${flag(q.iso)}</span>Zu welchem Land gehört diese Flagge?`,q.opts,q.c,`Das ist die Flagge von ${q.c}.${q.f?" "+q.f:""}`,3,`Flagge: ${q.c}`);
+}
+function wisQ(){const q=R.wis[R.i];mc("wissen",`${R.i+1} von 3 · ${q.cat}`,q.q,q.opts,q.a,q.f,3,`${q.q.replace("?","")}: ${q.a}`)}
+function ferQ(){
+  const [q,ans,unit,f]=R.fer[R.i];
+  app.innerHTML=`${head("fermi",`Schätzfrage ${R.i+1} von 2`)}<div class="q pop">${q}</div>
+  <p class="muted">Je näher dran, desto mehr XP. Ganz genau musst du es nicht wissen.</p>
+  <label class="fermi-in"><input id="fg" inputmode="numeric" autocomplete="off" placeholder="Deine Schätzung" aria-label="Schätzung"><span>${unit}</span></label>
+  <div id="fx"><button class="btn" id="ck">Schätzung abgeben</button></div>`;
+  const inp=$("#fg");inp.focus();
+  inp.oninput=()=>{const d=inp.value.replace(/\D/g,"");inp.value=d?fmt(+d):""};
+  $("#ck").onclick=()=>{
+    const g=+inp.value.replace(/\D/g,"");if(!g){inp.focus();return}
+    const ratio=Math.max(g/ans,ans/g),[t1,t2,t3]=LV().fermi;
+    const [pts,verdict]=ratio<=t1?[30,"Volltreffer!"]:ratio<=t2?[20,"Sehr nah dran."]:ratio<=t3?[10,"Richtige Größenordnung."]:[3,"Daneben, aber jetzt weißt du’s."];
+    award(pts);if(ratio<=t2)R.correct++;
+    R.learnedNow.push(["fermi",`${q.replace("?","")}: ${fmt(ans)} ${unit}`]);
+    inp.disabled=true;
+    $("#fx").innerHTML=`<div class="fact pop" style="--c:var(--fermi)"><b>${verdict}</b> Richtig sind ${fmt(ans)} ${unit}, du lagst bei ${fmt(g)}. ${f}</div><div style="height:12px"></div><button class="btn" id="nx">Weiter</button>`;
+    $("#nx").onclick=()=>advance(2);
+  };
+  inp.onkeydown=e=>{if(e.key==="Enter")$("#ck")?.click()};
+}
+function mathQ(){
+  const q=R.math[R.i],T=LV().t,t0=performance.now();
+  app.innerHTML=`${head("rechnen",`${R.i+1} von 4 · schnell = mehr XP`)}
+  <div class="timer" aria-hidden="true"><i id="tb"></i></div><div class="math pop">${q.txt}</div>
+  <div class="opts mopts">${q.opts.map(o=>`<button class="opt">${o}</button>`).join("")}</div>`;
+  const tb=$("#tb");cancelAnimationFrame(tmr);
+  const tick=now=>{const p=Math.max(0,1-(now-t0)/T);tb.style.width=p*100+"%";if(p>0)tmr=requestAnimationFrame(tick)};tmr=requestAnimationFrame(tick);
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    cancelAnimationFrame(tmr);const ok=+b.textContent===q.ans,fast=performance.now()-t0<T;
+    app.querySelectorAll(".opt").forEach(x=>{x.onclick=null;if(+x.textContent===q.ans)x.classList.add("right")});
+    if(!ok)b.classList.add("wrong");
+    if(ok){award(fast?15:8);R.correct++}
+    setTimeout(()=>advance(4),650);
+  });
+}
+function makeSudoku(r){
+  const base=[[1,2,3,4],[3,4,1,2],[2,1,4,3],[4,3,2,1]],dig=shuffle([1,2,3,4],r);
+  let g=base.map(row=>row.map(v=>dig[v-1]));
+  if(r()<.5)[g[0],g[1]]=[g[1],g[0]];if(r()<.5)[g[2],g[3]]=[g[3],g[2]];if(r()<.5)g=[g[2],g[3],g[0],g[1]];
+  if(r()<.5)g=g[0].map((_,c)=>g.map(row=>row[c]));
+  const sol=g.flat(),holes=shuffle([...Array(16).keys()],r).slice(0,LV().holes);
+  return{sol,cur:sol.map((v,i)=>holes.includes(i)?0:v),given:sol.map((_,i)=>!holes.includes(i)),sel:holes[0],mist:0,err:null};
+}
+function clash(c,i){const r=Math.floor(i/4),q=i%4,br=r-r%2,bq=q-q%2;
+  return c.some((v,k)=>{if(k===i||v!==c[i])return false;const kr=Math.floor(k/4),kq=k%4;return kr===r||kq===q||(kr-kr%2===br&&kq-kq%2===bq)});}
+function sudQ(){
+  const z=R.sud;
+  app.innerHTML=`${head("sudoku","Jede Zahl 1–4 einmal pro Zeile, Spalte und Block")}
+  <div class="sudoku pop">${z.cur.map((v,i)=>`<button class="cell ${z.given[i]?"given":"user"} ${z.sel===i?"sel":""} ${z.err===i?"err":""}" data-i="${i}" aria-label="Feld ${i+1}${v?": "+v:""}">${v||""}</button>`).join("")}</div>
+  <div class="pad">${[1,2,3,4].map(n=>`<button data-n="${n}">${n}</button>`).join("")}<button data-n="0" aria-label="Löschen">⌫</button></div>
+  <p class="eyebrow" style="text-align:center">Fehler: ${z.mist}</p>`;
+  app.querySelectorAll(".cell").forEach(c=>c.onclick=()=>{const i=+c.dataset.i;if(!z.given[i]){z.sel=i;sudQ()}});
+  app.querySelectorAll(".pad button").forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.n,i=z.sel;if(i==null||z.given[i])return;
+    z.cur[i]=n;z.err=null;
+    if(n&&clash(z.cur,i)){z.mist++;z.err=i;sudQ();return}
+    if(n){const nx=z.cur.findIndex((v,k)=>!v&&!z.given[k]);if(nx>=0)z.sel=nx}
+    if(z.cur.every((v,k)=>v&&!clash(z.cur,k))){award(Math.max(20,60-z.mist*10));R.correct++;R.learnedNow.push(["sudoku",`Sudoku gelöst${z.mist?` mit ${z.mist} Fehler${z.mist>1?"n":""}`:" ohne Fehler"}`]);finish();return}
+    sudQ();
+  });
+}
+
+/* ================= Ergebnis ================= */
+function finish(){
+  const before=levelOf(S.xp).lvl;let unlocked=false;
+  if(R.mode==="daily"){S.streak=(S.last===yesterday())?S.streak+1:1;S.last=today();if(S.streak%3===0){S.bonusDay=today();unlocked=true}}
+  if(R.mode==="bonus")S.bonusDone=today();
+  S.xp+=R.xp;S.rounds++;S.facts+=R.learnedNow.filter(x=>x[0]!=="sudoku").length;
+  R.geo.forEach(q=>{if(!S.learned.includes(q.c))S.learned.push(q.c)});
+  markSeen("geo",R.ids.geo,120);markSeen("clue",R.ids.clue,60);markSeen("wis",R.ids.wis,110);markSeen("fer",R.ids.fer,30);
+  save();
+  const L=levelOf(S.xp),up=L.lvl>before;
+  const title=R.mode==="bonus"?"Bonuslevel geschafft":R.mode==="free"?"Freie Runde geschafft":"Runde geschafft";
+  view("",null);
+  app.innerHTML=`<section class="hero pop" style="gap:16px">
+   <span class="eyebrow">${title} · ${R.correct} von ${R.total} richtig</span>
+   <h1 style="font-size:42px">Stark, ${esc(S.name)}.</h1>
+   <div><div class="xp-big" style="color:var(--reward)">+${R.xp} XP</div>${R.mult>1?'<p style="margin-top:6px;font-weight:700">Doppelte XP durch den Bonus.</p>':""}${up?`<p style="margin-top:6px;font-weight:700">Level ${L.lvl} erreicht!</p>`:""}</div>
+   ${R.mode==="daily"?`<span class="chip" style="align-self:flex-start;color:var(--ink)">🔥 ${S.streak} ${S.streak===1?"Tag":"Tage"} in Folge</span>`:""}
+  </section>
+  ${unlocked?`<section class="bonus pop"><span class="eyebrow" style="color:var(--ink)">3 Tage am Stück</span><h2>Bonuslevel freigeschaltet: doppelte XP</h2><button class="btn" id="bonus">Jetzt spielen</button></section>`:""}
+  <section class="card stack">
+   <span class="eyebrow">Das hast du heute gelernt</span>
+   <ul class="learned">${R.learnedNow.map(([k,t])=>`<li><i style="background:${GAMES[k].c}"></i>${esc(t)}</li>`).join("")}</ul>
+  </section>
+  <p class="muted" style="font-weight:600">Wenn du jetzt doch noch Instagram öffnest: völlig okay. Die besten vier Minuten hast du schon gehabt.</p>
+  <button class="btn" id="hm">Fertig</button>`;
+  $("#hm").onclick=home;
+  if(unlocked)$("#bonus").onclick=()=>start("bonus");
+}
+
+/* ================= Start ================= */
+if(!S)onboarding(1);else intro();
+initAccount();
+</script>
+</body>
+</html>
