@@ -17,7 +17,7 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 
 | Spiel | Was du machst |
 |---|---|
-| **Geo-Quiz** | Eine Hauptstadt, eine Flagge und ein Länder-Steckbrief (Wahrzeichen, Währung, Sprache, Kultur) |
+| **Geo-Quiz** | Eine Hauptstadt plus zwei aus Flagge, Landesumriss und Länder-Steckbrief (Wahrzeichen, Währung, Sprache, Kultur) |
 | **Wissen** | Drei Fragen aus 13 Bereichen, von Geschichte bis Weltall, jeweils mit kurzem Fakt |
 | **Schätzen** | Zwei Fragen, die niemand genau weiß. Je näher deine Schätzung, desto mehr XP |
 | **Kopfrechnen** | Vier Aufgaben auf Zeit |
@@ -31,7 +31,7 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 - **Drei Schwierigkeitsgrade:** Leicht, Mittel, Schwer
 - **Freunde-Rangliste** über Freundescodes
 - **Sicherungscode** zum Übertragen des Spielstands
-- **Fragenpool:** 150 Länder, 70 Steckbriefe, über 120 Wissensfragen, über 30 Schätzfragen
+- **Fragenpool:** 150 Länder, 139 Landesumrisse, 70 Steckbriefe, über 120 Wissensfragen, über 30 Schätzfragen
 
 ## Auf dem iPhone installieren
 
@@ -52,12 +52,13 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 - Reines HTML, CSS und JavaScript, ohne Framework und ohne Build-Schritt
 - `index.html`: App
 - `questions.js`: kompletter Fragenpool, leicht erweiterbar
+- `shapes.js`: Länderumrisse aus [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei), vereinfacht als SVG-Pfade
 - `manifest.webmanifest` und Icons: Installation als Web-App
 - Gehostet über GitHub Pages
 
 ## Roadmap
 
-- [ ] Länderumrisse erkennen
+- [x] Länderumrisse erkennen
 - [ ] Fragen zu Einwohnern und Fläche mit Daten aus offiziellen Quellen
 - [ ] Konten und Live-Rangliste mit Freunden
 - [ ] Weltkarte mit gelernten Ländern
