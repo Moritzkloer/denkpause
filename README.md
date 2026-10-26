@@ -29,8 +29,9 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 - **Bonuslevel** mit doppelten XP nach 3 Tagen am Stück
 - **„Das hast du heute gelernt“** nach jeder Runde
 - **Drei Schwierigkeitsgrade:** Leicht, Mittel, Schwer
-- **Freunde-Rangliste** über Freundescodes
-- **Sicherungscode** zum Übertragen des Spielstands
+- **Konto (optional)** mit E-Mail und Passwort: Spielstand wird online gesichert und auf allen Geräten synchronisiert
+- **Live-Rangliste mit Freunden:** Freunde per Benutzername hinzufügen
+- **Ohne Konto:** Freunde per Freundescode, Sicherungscode zum Übertragen des Spielstands
 - **Fragenpool:** 150 Länder, 139 Landesumrisse, 70 Steckbriefe, über 120 Wissensfragen, über 30 Schätzfragen
 
 ## Auf dem iPhone installieren
@@ -43,9 +44,10 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 
 ## Datenschutz
 
-- Kein Konto, kein Server, kein Tracking
-- Dein Spielstand (Name, XP, Streak) wird nur lokal auf deinem Gerät gespeichert
-- Wird die App vom Home-Bildschirm gelöscht, ist der Spielstand weg. Vorher den Sicherungscode in den Einstellungen kopieren.
+- Kein Tracking, keine Werbung
+- **Ohne Konto:** Dein Spielstand wird nur lokal auf deinem Gerät gespeichert. Wird die App gelöscht, ist er weg. Vorher den Sicherungscode in den Einstellungen kopieren.
+- **Mit Konto:** E-Mail, Benutzername und Spielfortschritt liegen bei [Supabase](https://supabase.com) auf Servern in Frankfurt (EU). Freunde sehen nur Name, XP, Streak und Länderzahl.
+- Konto und alle Online-Daten lassen sich jederzeit in den Einstellungen löschen.
 
 ## Technik
 
@@ -54,13 +56,14 @@ Statt Social Media zu verbieten, bietet Denkpause etwas Besseres für die ersten
 - `questions.js`: kompletter Fragenpool, leicht erweiterbar
 - `shapes.js`: Länderumrisse aus [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei), vereinfacht als SVG-Pfade
 - `manifest.webmanifest` und Icons: Installation als Web-App
+- Konten und Rangliste über Supabase (Postgres mit Row Level Security)
 - Gehostet über GitHub Pages
 
 ## Roadmap
 
 - [x] Länderumrisse erkennen
 - [ ] Fragen zu Einwohnern und Fläche mit Daten aus offiziellen Quellen
-- [ ] Konten und Live-Rangliste mit Freunden
+- [x] Konten und Live-Rangliste mit Freunden
 - [ ] Weltkarte mit gelernten Ländern
 - [ ] Wochenrückblick
 - [ ] Offline-Modus
